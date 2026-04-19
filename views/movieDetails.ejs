@@ -6,6 +6,49 @@
     <title>Movie Details</title>
 </head>
 <body>
+    <body>
+        <button>Back</button>
+        <br>
+    <h1>Enter a Movie</h1>
+
+    <form action="/enterMovie" method="POST">
+
+    <label for="movieName">Movie Name:</label>
+    <input 
+        type="text" 
+        id="movieName" 
+        name="movieName" 
+        placeholder="Enter name of movie"
+        required
+    >
+<br>
+<br>
+
+    <label for="role">Select Genre:</label>
+
+    <select id="genre" name="genre">
+        <!-- We may want to connect this to a database instead -->
+        <option value="action">Action</option>
+        <option value="Drama">Drama</option>
+        <option value="Romance">Romance</option>
+    </select>
+
+    <br>
     
+
+    <p>Have you watched this movie?</p>
+
+    <input type="checkbox" id="movieWatched" name="watchStatus" value="Yes">
+    <label for="Yes">Yes</label><br>
+
+    <input type="checkbox" id="movieNotWatched" name="watchStatus" value="No">
+    <label for="no">No</label>
+    <br>
+    <br>
+
+    <button type="submit">Submit</button>
+
+</form>
+
 </body>
 </html>

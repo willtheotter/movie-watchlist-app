@@ -6,6 +6,33 @@
     <title>Watch List</title>
 </head>
 <body>
-    
+    <button>Back</button>
+        <br>
+    <h1>Watch List</h1>
+    <br>
+    <br>
+    <table border="1">
+    <thead>
+        <tr>
+            <th>Title</th>
+            <th>Genre</th>
+            <th>Watched</th>
+            <th>Personal Rating</th>
+            <th>IMDB rating</th>
+        </tr>
+    </thead>
+
+    <tbody>
+        <% for (let movie of movies) { %>
+            <tr>
+                <td><%= movie.title %></td>
+                <td><%= movie.genre %></td>
+                <td><%= movie.watched %></td>
+                <td><%= movie.personalRating %></td>
+                <td><%= movie.IMDBrating %></td>
+            </tr>
+        <% } %>
+    </tbody>
+</table>
 </body>
 </html>
