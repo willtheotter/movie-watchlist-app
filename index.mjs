@@ -1,4 +1,6 @@
 console.log("FILE IS RUNNING"); 
+import dotenv from 'dotenv';
+dotenv.config();
 
 //import packages
 import express from 'express';
@@ -14,10 +16,10 @@ app.use(express.urlencoded({extended:true}));
 
 //setting up database connection pool
 const pool = mysql.createPool({
-    host: "bqmayq5x95g1sgr9.cbetxkdyhwsb.us-east-1.rds.amazonaws.com",
-    user: "xmp5mr6euvg1wfgv",
-    password: "c86t00ploqkdv6qy",
-    database: "lvrxrzvw9a1cobbu",
+    host: process.env.DB_HOST,
+    user: process.env.DB_USER,
+    password: process.env.DB_PASSWORD,
+    database: process.env.DB_DATABASE,
     connectionLimit: 10,
     waitForConnections: true
 });
