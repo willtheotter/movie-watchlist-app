@@ -7,143 +7,45 @@
     <link rel="stylesheet" href="/css/style.css">
 </head>
 <body>
-    <div class="auth-container">
-        <div class="auth-card">
-            <h1>🎬 WatchList</h1>
-            <h2>Create Your Account</h2>
-            
-            <% if (error) { %>
-                <div class="error-message"><%= error %></div>
-            <% } %>
-            
-            <form action="/register" method="POST" class="auth-form">
-                <div class="form-group">
-                    <input type="text" name="username" placeholder="Username" required>
-                </div>
-                
-                <div class="form-group">
-                    <input type="email" name="email" placeholder="Email" required>
-                </div>
-                
-                <div class="form-group">
-                    <input type="password" name="password" placeholder="Password (min 6 characters)" required>
-                </div>
-                
-                <div class="form-group">
-                    <input type="password" name="confirm_password" placeholder="Confirm Password" required>
-                </div>
-                
-                <button type="submit" class="auth-btn">Register</button>
-            </form>
-            
-            <p class="auth-link">Already have an account? <a href="/login">Login here</a></p>
-        </div>
+<main class="content-wrapper">
+    <div class="edit-container">
+        <h1 class="brand-logo">WatchList</h1>
+        <h2>Create Your Account</h2>
+
+        <% if (error) { %>
+            <div class="error-banner"><%= error %></div>
+        <% } %>
+
+        <form action="/register" method="POST" class="styled-form">
+            <div class="form-group">
+                <label>Username</label>
+                <input type="text" name="username" placeholder="Choose a username" required>
+            </div>
+
+            <div class="form-group">
+                <label>Email Address</label>
+                <input type="email" name="email" placeholder="email@example.com" required>
+            </div>
+
+            <div class="form-group">
+                <label>Password</label>
+                <input type="password" name="password" placeholder="Min. 6 characters" required>
+            </div>
+
+            <div class="form-group">
+                <label>Confirm Password</label>
+                <input type="password" name="confirm_password" placeholder="Repeat password" required>
+            </div>
+
+            <button type="submit" class="btn-save">Create Account</button>
+        </form>
+
+        <p class="auth-footer-text">
+            Already have an account? <a href="/login">Login here</a>
+        </p>
     </div>
+</main>
 
-    <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-
-        body {
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
-            background: linear-gradient(135deg, #141414 0%, #1a1a1a 100%);
-            min-height: 100vh;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-        }
-
-        .auth-container {
-            width: 100%;
-            padding: 20px;
-        }
-
-        .auth-card {
-            max-width: 400px;
-            margin: 0 auto;
-            background: white;
-            border-radius: 12px;
-            padding: 40px;
-            box-shadow: 0 10px 40px rgba(0,0,0,0.2);
-            text-align: center;
-        }
-
-        .auth-card h1 {
-            color: #e50914;
-            font-size: 2.5rem;
-            margin-bottom: 10px;
-        }
-
-        .auth-card h2 {
-            color: #333;
-            font-size: 1.5rem;
-            margin-bottom: 30px;
-            font-weight: normal;
-        }
-
-        .error-message {
-            background: #f8d7da;
-            color: #721c24;
-            padding: 12px;
-            border-radius: 6px;
-            margin-bottom: 20px;
-            font-size: 14px;
-        }
-
-        .auth-form {
-            display: flex;
-            flex-direction: column;
-            gap: 15px;
-        }
-
-        .form-group input {
-            width: 100%;
-            padding: 12px 15px;
-            border: 1px solid #ddd;
-            border-radius: 6px;
-            font-size: 16px;
-            transition: border-color 0.3s;
-        }
-
-        .form-group input:focus {
-            outline: none;
-            border-color: #e50914;
-        }
-
-        .auth-btn {
-            background: #e50914;
-            color: white;
-            padding: 12px;
-            border: none;
-            border-radius: 6px;
-            font-size: 16px;
-            font-weight: bold;
-            cursor: pointer;
-            transition: background 0.3s;
-            margin-top: 10px;
-        }
-
-        .auth-btn:hover {
-            background: #b80710;
-        }
-
-        .auth-link {
-            margin-top: 25px;
-            color: #666;
-            font-size: 14px;
-        }
-
-        .auth-link a {
-            color: #e50914;
-            text-decoration: none;
-        }
-
-        .auth-link a:hover {
-            text-decoration: underline;
-        }
-    </style>
+<%- include('partials/footer.ejs') %>
 </body>
 </html>

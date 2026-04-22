@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Edit Movie | <%= movie.title %></title>
+    <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+<%- include('partials/nav.ejs') %>
+
+<main class="content-wrapper">
+    <div class="edit-container">
+        <h1>Update Details</h1>
+        <h2 style="color: #01b4e4; margin-bottom: 20px;"><%= movie.title %></h2>
+
+        <% if (movie.poster_url) { %>
+            <div class="poster-preview">
+                <img src="<%= movie.poster_url %>" alt="Poster Preview">
+            </div>
+        <% } %>
+
+        <form action="/watchlist/update" method="POST" class="styled-form">
+            <input type="hidden" name="id" value="<%= movie.id %>">
+
+            <div class="form-group">
+                <label>My Rating (1-10)</label>
+                <input type="number" name="rating" min="1" max="10" value="<%= movie.rating %>">
+            </div>
+
+            <div class="form-group checkbox-group">
+                <label for="watched_status">Mark as Watched</label>
+                <input type="checkbox" id="watched_status" name="watched_status" <%= movie.watched_status ? "checked" : "" %>>
+            </div>
+
+            <div class="form-group">
+                <label>Your Review</label>
+                <textarea
+                        name="personal_review"
+                        rows="6"
+                        placeholder="Write your thoughts here..."
+                ><%= movie.personal_review %></textarea>
+            </div>
+
+            <div class="form-actions">
+                <button type="submit" class="btn-save">Save Changes</button>
+                <a href="/movie/<%= movie.id %>" class="btn-cancel">Cancel</a>
+            </div>
+        </form>
+    </div>
+</main>
+
+<%- include('partials/footer.ejs') %>
+</body>
+</html>

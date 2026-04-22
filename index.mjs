@@ -21,6 +21,11 @@ app.use(session({
     cookie: { secure: false, maxAge: 1000 * 60 * 60 * 24 }
 }));
 
+app.use((req, res, next) => {
+    res.locals.user = req.session.username;
+    next();
+});
+
 const pool = mysql.createPool({
     host: process.env.DB_HOST,
     user: process.env.DB_USER,
@@ -44,26 +49,41 @@ const genreMap = {
     10770: 'TV Movie', 53: 'Thriller', 10752: 'War', 37: 'Western'
 };
 
-app.get('/', isAuthenticated, async (req, res) => {
+app.get('/', async (req, res) => {
+    const userId = req.session.userId;
+    const username = req.session.username;
+
     try {
-        const [rows] = await pool.execute(`
-            SELECT Watchlist.*, Movies.title, Movies.poster_url 
-            FROM Watchlist 
-            JOIN Movies ON Watchlist.movie_id = Movies.id 
-            WHERE Watchlist.user_id = ?
-            LIMIT 5
-        `, [req.session.userId]);
-        res.render('index', { watchlist: rows, user: req.session.username });
+        let watchlist = [];
+
+        if (userId) {
+            const [rows] = await pool.execute(`
+                SELECT Watchlist.*, Movies.title, Movies.poster_url 
+                FROM Watchlist 
+                JOIN Movies ON Watchlist.movie_id = Movies.id 
+                WHERE Watchlist.user_id = ?
+                LIMIT 5
+            `, [userId]);
+            watchlist = rows;
+        }
+
+        res.render('index', { 
+            watchlist: watchlist, 
+            user: username || null,
+            currentPage: 'home'
+        });
+
     } catch (err) {
+        console.error(err);
         res.status(500).send("Database Error");
     }
 });
 
-app.get('/search', isAuthenticated, (req, res) => {
-    res.render('search');
+app.get('/search', (req, res) => {
+    res.render('search', { currentPage: 'search' });
 });
 
-app.get('/search-results', isAuthenticated, async (req, res) => {
+app.get('/search-results', async (req, res) => {
     const query = req.query.query;
     if (!query) return res.redirect('/search');
 
@@ -71,6 +91,12 @@ app.get('/search-results', isAuthenticated, async (req, res) => {
         const url = `${TMDB_BASE_URL}/search/movie?api_key=${TMDB_API_KEY}&query=${encodeURIComponent(query)}`;
         const response = await fetch(url);
         const data = await response.json();
+
+        console.log("TMDB response:", data);
+
+        if (!data.results || !Array.isArray(data.results)) {
+            return res.status(500).send("TMDB API returned an invalid response");
+        }
 
         const processedMovies = data.results.map(movie => {
             const firstGenreId = movie.genre_ids && movie.genre_ids.length > 0 ? movie.genre_ids[0] : null;
@@ -81,7 +107,7 @@ app.get('/search-results', isAuthenticated, async (req, res) => {
             };
         });
 
-        res.render('searchResults', { movies: processedMovies });
+        res.render('searchResults', { movies: processedMovies, currentPage: 'search'});
     } catch (err) {
         console.error(err);
         res.status(500).send("API Error");
@@ -147,7 +173,7 @@ app.get('/watchlist', isAuthenticated, async (req, res) => {
             ORDER BY Watchlist.watched_status ASC, Watchlist.id DESC
         `, [userId]);
         
-        res.render('watchlist', { movies: rows, success, error, user: req.session.username });
+        res.render('watchlist', { movies: rows, success, error, user: req.session.username, currentPage: 'watchlist'});
     } catch (err) {
         console.error(err);
         res.status(500).send("Error fetching watchlist");
@@ -155,21 +181,22 @@ app.get('/watchlist', isAuthenticated, async (req, res) => {
 });
 
 app.get('/edit/:id', isAuthenticated, async (req, res) => {
-    const watchlistId = req.params.id;
+    const idParam = req.params.id;
     const userId = req.session.userId;
     
     try {
         const [rows] = await pool.execute(`
-            SELECT Watchlist.*, Movies.title, Movies.poster_url, Movies.genre
+            SELECT Watchlist.*, Movies.title, Movies.poster_url, Movies.genre, Movies.tmdb_id
             FROM Watchlist 
             JOIN Movies ON Watchlist.movie_id = Movies.id 
-            WHERE Watchlist.id = ? AND Watchlist.user_id = ?
-        `, [watchlistId, userId]);
+            WHERE (Watchlist.id = ? OR Movies.tmdb_id = ?) AND Watchlist.user_id = ?
+        `, [idParam, idParam, userId]);
         
         if (rows.length > 0) {
-            res.render('editWatchlist', { movie: rows[0], user: req.session.username });
+            res.render('editWatchlist', { movie: rows[0], user: req.session.username, currentPage: 'watchlist'});
         } else {
-            res.status(404).send("Movie not found in your watchlist");
+            console.log(`Edit failed for ID: ${idParam} and User: ${userId}`);
+            res.status(404).send("Movie not found in your watchlist.");
         }
     } catch (err) {
         console.error(err);
@@ -334,7 +361,7 @@ app.post('/register', async (req, res) => {
 });
 
 app.get('/sync-guest-data', isAuthenticated, (req, res) => {
-    res.render('syncData', { user: req.session.username });
+    res.render('syncData', { user: req.session.username, currentPage: 'sync' });
 });
 
 app.post('/api/sync-watchlist', isAuthenticated, async (req, res) => {
@@ -398,6 +425,67 @@ app.get('/logout', (req, res) => {
         res.redirect('/login');
     });
 });
+
+app.get('/api/fake-reviews/:movieId', isAuthenticated, async (req, res) => {
+    const movieId = req.params.movieId;
+
+    try {
+        const tmdbUrl = `${TMDB_BASE_URL}/movie/${movieId}/reviews?api_key=${TMDB_API_KEY}`;
+        const tmdbRes = await fetch(tmdbUrl);
+        const tmdbData = await tmdbRes.json();
+
+        const realReviews = (tmdbData.results || []).slice(0, 3).map(review => ({
+            reviewer: review.author,
+            text: review.content.length > 300 
+                  ? review.content.substring(0, 300) + "..." 
+                  : review.content
+        }));
+
+        if (realReviews.length === 0) {
+            realReviews.push({ 
+                reviewer: "System", 
+                text: "No community reviews found for this title yet." 
+            });
+        }
+
+        const idNum = parseInt(movieId);
+        const totalLikes = (idNum % 150) + Math.floor((idNum / 7) % 50) + 10;
+
+        res.json({
+            reviews: realReviews,
+            totalLikes: totalLikes
+        });
+
+    } catch (err) {
+        console.error("Review Fetch Error:", err);
+        res.status(500).json({ error: 'Could not load combined review data' });
+    }
+});
+
+app.get('/movie/:id', isAuthenticated, async (req, res) => {
+    const movieId = req.params.id;
+    const userId = req.session.userId;
+
+    try {
+        const [rows] = await pool.execute(`
+            SELECT Movies.*, Watchlist.rating, Watchlist.watched_status, Watchlist.personal_review
+            FROM Movies
+            LEFT JOIN Watchlist ON Movies.id = Watchlist.movie_id AND Watchlist.user_id = ?
+            WHERE Movies.id = ?
+        `, [userId, movieId]);
+
+        if (rows.length === 0) {
+            return res.status(404).send("Movie not found");
+        }
+
+        res.render('movieDetails', { movie: rows[0], currentPage: 'watchlist' });
+    } catch (err) {
+        console.error(err);
+        res.status(500).send("Database Error");
+    }
+});
+
+
 
 app.listen(PORT, () => {
     console.log(`Server running at http://localhost:${PORT}`);

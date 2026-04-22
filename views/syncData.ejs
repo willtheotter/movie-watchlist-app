@@ -7,184 +7,215 @@
     <link rel="stylesheet" href="/css/style.css">
 </head>
 <body>
-    <nav class="navbar">
-        <div class="nav-container">
-            <a href="/" class="nav-brand">🎬 WatchList</a>
-            <div class="nav-links">
-                <span class="user-greeting">Hello, <%= user %>!</span>
-                <a href="/search" class="nav-link">🔍 Search</a>
-                <a href="/watchlist" class="nav-link">📋 My Watchlist</a>
-                <a href="/logout" class="nav-link">🚪 Logout</a>
-            </div>
-        </div>
-    </nav>
 
-    <div class="container">
-        <div class="sync-container">
-            <h1>📦 Sync Your Guest Watchlist</h1>
-            <p>We found movies saved in your browser from when you weren't logged in.</p>
-            <p>Would you like to add them to your permanent account?</p>
-            
-            <div id="guest-movies-list" class="guest-movies"></div>
-            
-            <div class="sync-buttons">
-                <button id="sync-btn" class="btn btn-primary">✅ Yes, Sync My Movies</button>
-                <button id="skip-btn" class="btn btn-secondary">⏭️ No, Skip This</button>
-            </div>
-            
-            <div id="sync-status" class="sync-status"></div>
+<%- include('partials/nav.ejs') %>
+
+<div class="container">
+    <div class="sync-container">
+        <h1>📦 Sync Your Guest Watchlist</h1>
+        <p>We found movies saved in your browser from when you weren't logged in.</p>
+        <p>Would you like to add them to your permanent account?</p>
+
+        <div id="guest-movies-list" class="guest-movies"></div>
+
+        <div class="sync-buttons">
+            <button id="sync-btn" class="btn btn-primary">✅ Yes, Sync My Movies</button>
+            <button id="skip-btn" class="btn btn-secondary">⏭️ No, Skip This</button>
         </div>
+
+        <div id="sync-status" class="sync-status"></div>
     </div>
+</div>
 
-    <script>
-        let guestWatchlist = [];
-        
-        function loadGuestWatchlist() {
-            const stored = localStorage.getItem('watchlist');
-            if (stored) {
-                try {
-                    guestWatchlist = JSON.parse(stored);
-                    if (guestWatchlist.length > 0) {
-                        displayGuestMovies();
-                    } else {
-                        document.querySelector('.sync-container').innerHTML = `
+<script>
+    let guestWatchlist = [];
+
+    function loadGuestWatchlist() {
+        const stored = localStorage.getItem('watchlist');
+        if (stored) {
+            try {
+                guestWatchlist = JSON.parse(stored);
+                if (guestWatchlist.length > 0) {
+                    displayGuestMovies();
+                } else {
+                    document.querySelector('.sync-container').innerHTML = `
                             <h1>📦 No Guest Data Found</h1>
                             <p>You don't have any movies saved in your browser.</p>
                             <a href="/" class="btn btn-primary">Go to Dashboard</a>
                         `;
-                    }
-                } catch(e) {
-                    console.error('Error parsing localStorage', e);
-                    document.querySelector('.sync-container').innerHTML = `
+                }
+            } catch(e) {
+                console.error('Error parsing localStorage', e);
+                document.querySelector('.sync-container').innerHTML = `
                         <h1>⚠️ Error</h1>
                         <p>Could not read your saved data.</p>
                         <a href="/" class="btn btn-primary">Go to Dashboard</a>
                     `;
-                }
-            } else {
-                document.querySelector('.sync-container').innerHTML = `
+            }
+        } else {
+            document.querySelector('.sync-container').innerHTML = `
                     <h1>📦 No Guest Data Found</h1>
                     <p>You don't have any movies saved in your browser.</p>
                     <a href="/" class="btn btn-primary">Go to Dashboard</a>
                 `;
-            }
         }
-        
-        function displayGuestMovies() {
-            const container = document.getElementById('guest-movies-list');
-            container.innerHTML = '<h3>Movies to sync:</h3><ul>';
-            guestWatchlist.forEach(movie => {
-                container.innerHTML += `
+    }
+
+    function displayGuestMovies() {
+        const container = document.getElementById('guest-movies-list');
+        container.innerHTML = '<h3>Movies to sync:</h3><ul>';
+        guestWatchlist.forEach(movie => {
+            container.innerHTML += `
                     <li>
                         <strong>${movie.title}</strong>
                         ${movie.genre ? `(${movie.genre})` : ''}
                         ${movie.watched_status ? '✅ Watched' : '👀 To Watch'}
                     </li>
                 `;
+        });
+        container.innerHTML += '</ul>';
+    }
+
+    document.getElementById('sync-btn')?.addEventListener('click', async () => {
+        const syncBtn = document.getElementById('sync-btn');
+        const statusDiv = document.getElementById('sync-status');
+
+        syncBtn.disabled = true;
+        syncBtn.textContent = '⏳ Syncing...';
+
+        try {
+            const response = await fetch('/api/sync-watchlist', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ guestWatchlist })
             });
-            container.innerHTML += '</ul>';
-        }
-        
-        document.getElementById('sync-btn')?.addEventListener('click', async () => {
-            const syncBtn = document.getElementById('sync-btn');
-            const statusDiv = document.getElementById('sync-status');
-            
-            syncBtn.disabled = true;
-            syncBtn.textContent = '⏳ Syncing...';
-            
-            try {
-                const response = await fetch('/api/sync-watchlist', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ guestWatchlist })
-                });
-                
-                const result = await response.json();
-                
-                if (result.success) {
-                    statusDiv.innerHTML = `<div class="success">✅ ${result.message} (${result.syncedCount} movies added)</div>`;
-                    localStorage.removeItem('watchlist');
-                    setTimeout(() => {
-                        window.location.href = '/watchlist';
-                    }, 2000);
-                } else {
-                    statusDiv.innerHTML = `<div class="error">❌ ${result.message}</div>`;
-                    syncBtn.disabled = false;
-                    syncBtn.textContent = '✅ Yes, Sync My Movies';
-                }
-            } catch (err) {
-                statusDiv.innerHTML = `<div class="error">❌ Sync failed. Please try again.</div>`;
+
+            const result = await response.json();
+
+            if (result.success) {
+                statusDiv.innerHTML = `<div class="success">✅ ${result.message} (${result.syncedCount} movies added)</div>`;
+                localStorage.removeItem('watchlist');
+                setTimeout(() => {
+                    window.location.href = '/watchlist';
+                }, 2000);
+            } else {
+                statusDiv.innerHTML = `<div class="error">❌ ${result.message}</div>`;
                 syncBtn.disabled = false;
                 syncBtn.textContent = '✅ Yes, Sync My Movies';
             }
-        });
-        
-        document.getElementById('skip-btn')?.addEventListener('click', () => {
-            window.location.href = '/';
-        });
-        
-        loadGuestWatchlist();
-    </script>
-    
-    <style>
-        .sync-container {
-            max-width: 600px;
-            margin: 50px auto;
-            padding: 30px;
-            background: white;
-            border-radius: 12px;
-            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
-            text-align: center;
+        } catch (err) {
+            statusDiv.innerHTML = `<div class="error">❌ Sync failed. Please try again.</div>`;
+            syncBtn.disabled = false;
+            syncBtn.textContent = '✅ Yes, Sync My Movies';
         }
-        .guest-movies {
-            text-align: left;
-            margin: 20px 0;
-            padding: 15px;
-            background: #f5f5f5;
-            border-radius: 8px;
-        }
-        .guest-movies ul {
-            list-style: none;
-            padding: 0;
-        }
-        .guest-movies li {
-            padding: 8px 0;
-            border-bottom: 1px solid #ddd;
-        }
-        .sync-buttons {
-            display: flex;
-            gap: 15px;
-            justify-content: center;
-            margin: 20px 0;
-        }
-        .btn-primary {
-            background: #e50914;
-            color: white;
-            padding: 12px 24px;
-            border: none;
-            border-radius: 6px;
-            cursor: pointer;
-        }
-        .btn-secondary {
-            background: #666;
-            color: white;
-            padding: 12px 24px;
-            border: none;
-            border-radius: 6px;
-            cursor: pointer;
-        }
-        .success {
-            color: #28a745;
-            padding: 10px;
-            background: #d4edda;
-            border-radius: 4px;
-        }
-        .error {
-            color: #dc3545;
-            padding: 10px;
-            background: #f8d7da;
-            border-radius: 4px;
-        }
-    </style>
+    });
+
+    document.getElementById('skip-btn')?.addEventListener('click', () => {
+        window.location.href = '/';
+    });
+
+    loadGuestWatchlist();
+</script>
+
+<style>
+    .sync-container {
+        max-width: 600px;
+        margin: 50px auto;
+        padding: 40px;
+        background: #222; /* Grey Motif Card */
+        border: 1px solid #333;
+        border-radius: 12px;
+        box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+        text-align: center;
+    }
+
+    .guest-movies {
+        text-align: left;
+        margin: 25px 0;
+        padding: 20px;
+        background: #1a1a1a; /* Sunken background */
+        border: 1px solid #333;
+        border-radius: 8px;
+    }
+
+    .guest-movies ul {
+        list-style: none;
+        padding: 0;
+        margin: 0;
+    }
+
+    .guest-movies li {
+        padding: 12px 0;
+        border-bottom: 1px solid #2a2a2a;
+        color: #ddd;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+
+    .guest-movies li:last-child {
+        border-bottom: none;
+    }
+
+    .sync-buttons {
+        display: flex;
+        gap: 15px;
+        justify-content: center;
+        margin: 25px 0;
+    }
+
+    .btn-primary {
+        background: #01b4e4; /* TMDb Blue */
+        color: white;
+        padding: 12px 24px;
+        border: none;
+        border-radius: 6px;
+        font-weight: bold;
+        cursor: pointer;
+        transition: background 0.3s, transform 0.1s;
+    }
+
+    .btn-primary:hover {
+        background: #0199c2;
+    }
+
+    .btn-secondary {
+        background: #444;
+        color: #bbb;
+        padding: 12px 24px;
+        border: none;
+        border-radius: 6px;
+        font-weight: bold;
+        cursor: pointer;
+        transition: background 0.3s;
+    }
+
+    .btn-secondary:hover {
+        background: #555;
+        color: white;
+    }
+
+    .success {
+        background-color: #1e3a2a;
+        color: #80ff80;
+        padding: 12px;
+        border-radius: 6px;
+        border: 1px solid #2d5a3f;
+        font-size: 0.9rem;
+        margin-top: 15px;
+    }
+
+    .error {
+        background-color: #442a2a;
+        color: #ff8080;
+        padding: 12px;
+        border-radius: 6px;
+        border: 1px solid #663333;
+        font-size: 0.9rem;
+        margin-top: 15px;
+    }
+</style>
+
+<%- include('partials/footer.ejs') %>
 </body>
 </html>

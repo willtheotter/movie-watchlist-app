@@ -4,16 +4,12 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>My Watchlist</title>
-    <link rel="stylesheet" href="/css/style.css"> </head>
+    <link rel="stylesheet" href="/css/style.css">
+</head>
 <body>
+<%- include('partials/nav.ejs') %>
 
 <h1>My Movie Watchlist</h1>
-
-<nav>
-    <a href="/">Home</a> |
-    <a href="/search">Add New Movie</a> |
-    <a href="/logout" style="color: red;">Logout</a>
-</nav>
 
 <hr>
 
@@ -22,7 +18,7 @@
 <% } else { %>
     <table border="1" cellpadding="10" style="width: 100%; border-collapse: collapse;">
         <thead>
-        <tr style="background-color: #f2f2f2;">
+        <tr style="background-color: #FF0000;">
             <th>Poster</th>
             <th>Title</th>
             <th>Genre</th>
@@ -67,9 +63,7 @@
     </table>
 <% } %>
 
-<footer style="margin-top: 30px;">
-    <p>&copy; 2024 WatchList Movie Tracker</p>
-</footer>
+<%- include('partials/footer.ejs') %>
 
 </body>
 </html>
