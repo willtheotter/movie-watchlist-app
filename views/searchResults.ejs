@@ -46,13 +46,26 @@
                                 Community Reviews
                             </button>
 
-                            <form action="/watchlist/add" method="POST">
-                                <input type="hidden" name="tmdb_id" value="<%= movie.id %>">
-                                <input type="hidden" name="title" value="<%= movie.title %>">
-                                <input type="hidden" name="poster_path" value="<%= movie.poster_path %>">
-                                <input type="hidden" name="genre_id" value="<%= movie.genre_ids[0] %>">
-                                <button type="submit" class="btn-add">Add to Watchlist</button>
-                            </form>
+                            <% if (user) { %>
+                                <form action="/watchlist/add" method="POST" style="display:inline;">
+                                    <input type="hidden" name="tmdb_id" value="<%= movie.id %>">
+                                    <input type="hidden" name="title" value="<%= movie.title %>">
+                                    <input type="hidden" name="poster_path" value="<%= movie.poster_path %>">
+                                    <input type="hidden" name="genre_id" value="<%= movie.genre_ids[0] %>">
+                                    <button type="submit" class="btn-add">Add to Watchlist</button>
+                                </form>
+                            <% } else { %>
+                                <button type="button" class="btn-add guest-btn"
+                                        onclick="saveToGuestWatchlist({
+                                                tmdb_id: '<%= movie.id %>',
+                                                title: '<%= movie.title %>',
+                                                poster_url: 'https://image.tmdb.org/t/p/w500<%= movie.poster_path %>',
+                                                genre: '<%= movie.genre_name %>',
+                                                watched_status: 0
+                                                }, this)">
+                                    Add to Watchlist
+                                </button>
+                            <% } %>
                         </div>
 
                         <div id="reviews-<%= movie.id %>" class="reviews-dropdown"></div>
@@ -64,6 +77,22 @@
 </main>
 
 <script>
+    function saveToGuestWatchlist(movie, button) {
+        let watchlist = JSON.parse(localStorage.getItem('watchlist') || '[]');
+
+        if (watchlist.some(m => m.tmdb_id == movie.tmdb_id)) {
+            button.textContent = "Already in List";
+            button.style.backgroundColor = "#444";
+            return;
+        }
+
+        watchlist.push(movie);
+        localStorage.setItem('watchlist', JSON.stringify(watchlist));
+
+        button.style.backgroundColor = "#28a745";
+        button.textContent = "Saved to Browser!";
+    }
+
     async function loadMovieReviews(movieId, button) {
         const reviewBox = document.getElementById(`reviews-${movieId}`);
         const cacheKey = `reviews-${movieId}`;
