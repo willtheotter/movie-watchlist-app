@@ -1,25 +1,107 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-    <title>WatchList Home</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Home - WatchList</title>
     <link rel="stylesheet" href="/css/style.css">
 </head>
 <body>
- <%- include('partials/nav.ejs') %>
-<h1>My Movie Watchlist</h1>
-<h2>Quick View</h2>
-<ul>
-    <% if (watchlist.length === 0) { %>
-        <li>Your watchlist is empty. <a href="/search">Add some movies!</a></li>
-    <% } else { %>
-            <% watchlist.forEach(item => { %>
-                <li>
-                    <a href="/movie/<%= item.movie_id %>"><strong><%= item.title %></strong></a>
-                    (<%= item.watched_status ? 'Watched' : 'To Watch' %>)
-                </li>
-            <% }); %>
-    <% } %>
-</ul>
+
+<%- include('partials/nav.ejs') %>
+
+<main class="content-wrapper">
+    <section class="welcome-banner">
+        <% if (user) { %>
+            <h1>Hello, <%= user %>!</h1>
+            <p>Welcome back to your movie collection.</p>
+        <% } else { %>
+            <h1>Hello, Guest!</h1>
+            <div class="guest-alert-box">
+                <p>Login to use full watchlist features, sync your movies, and save reviews permanently.</p>
+                <a href="/login" class="btn-link">Login / Register</a>
+            </div>
+        <% } %>
+    </section>
+
+    <section class="watchlist-preview">
+        <h2>Your Recent Watchlist</h2>
+        <div class="watchlist-grid" id="home-watchlist-display">
+            <% if (user) { %>
+                <% if (watchlist.length === 0) { %>
+                    <p>Your watchlist is empty. <a href="/search">Start searching!</a></p>
+                <% } else { %>
+                    <ul class="text-watchlist">
+                        <% watchlist.forEach(movie => { %>
+                            <li>
+                                <a href="/movie/<%= movie.movie_id %>" class="movie-text-link">
+                                    <%= movie.title %>
+                                </a>
+                            </li>
+                        <% }); %>
+                    </ul>
+                <% } %>
+            <% } else { %>
+                <div id="guest-local-preview"></div>
+                <script>
+                    const localData = JSON.parse(localStorage.getItem('watchlist') || '[]');
+                    const previewDiv = document.getElementById('guest-local-preview');
+
+                    if (localData.length === 0) {
+                        previewDiv.innerHTML = '<p>Your temporary browser list is empty.</p>';
+                    } else {
+                        let html = '<ul class="text-watchlist">';
+                        localData.slice(0, 5).forEach(movie => {
+                            html += `
+                                <li>
+                                    <a href="/movie/${movie.tmdb_id}" class="movie-text-link">
+                                        ${movie.title} (Guest)
+                                    </a>
+                                </li>
+                            `;
+                        });
+                        html += '</ul>';
+                        previewDiv.innerHTML = html;
+                    }
+                </script>
+            <% } %>
+        </div>
+    </section>
+</main>
+
+<style>
+    .text-watchlist {
+        list-style: none;
+        padding: 0;
+        margin-top: 20px;
+    }
+
+    .text-watchlist li {
+        padding: 12px;
+        background: #222;
+        border: 1px solid #333;
+        margin-bottom: 8px;
+        border-radius: 6px;
+        transition: transform 0.2s, background 0.2s;
+    }
+
+    .text-watchlist li:hover {
+        background: #2a2a2a;
+        transform: translateX(5px);
+    }
+
+    .movie-text-link {
+        color: #01b4e4;
+        text-decoration: none;
+        font-weight: bold;
+        display: block;
+        font-size: 1.1rem;
+    }
+
+    .movie-text-link:hover {
+        color: #fff;
+    }
+</style>
 
 <%- include('partials/footer.ejs') %>
 </body>

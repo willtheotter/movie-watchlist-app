@@ -49,17 +49,32 @@ const genreMap = {
     10770: 'TV Movie', 53: 'Thriller', 10752: 'War', 37: 'Western'
 };
 
-app.get('/', isAuthenticated, async (req, res) => {
+app.get('/', async (req, res) => {
+    const userId = req.session.userId;
+    const username = req.session.username;
+
     try {
-        const [rows] = await pool.execute(`
-            SELECT Watchlist.*, Movies.title, Movies.poster_url 
-            FROM Watchlist 
-            JOIN Movies ON Watchlist.movie_id = Movies.id 
-            WHERE Watchlist.user_id = ?
-            LIMIT 5
-        `, [req.session.userId]);
-        res.render('index', { watchlist: rows, user: req.session.username, currentPage: 'home'});
+        let watchlist = [];
+
+        if (userId) {
+            const [rows] = await pool.execute(`
+                SELECT Watchlist.*, Movies.title, Movies.poster_url 
+                FROM Watchlist 
+                JOIN Movies ON Watchlist.movie_id = Movies.id 
+                WHERE Watchlist.user_id = ?
+                LIMIT 5
+            `, [userId]);
+            watchlist = rows;
+        }
+
+        res.render('index', { 
+            watchlist: watchlist, 
+            user: username || null,
+            currentPage: 'home'
+        });
+
     } catch (err) {
+        console.error(err);
         res.status(500).send("Database Error");
     }
 });
@@ -166,21 +181,22 @@ app.get('/watchlist', isAuthenticated, async (req, res) => {
 });
 
 app.get('/edit/:id', isAuthenticated, async (req, res) => {
-    const watchlistId = req.params.id;
+    const idParam = req.params.id;
     const userId = req.session.userId;
     
     try {
         const [rows] = await pool.execute(`
-            SELECT Watchlist.*, Movies.title, Movies.poster_url, Movies.genre
+            SELECT Watchlist.*, Movies.title, Movies.poster_url, Movies.genre, Movies.tmdb_id
             FROM Watchlist 
             JOIN Movies ON Watchlist.movie_id = Movies.id 
-            WHERE Watchlist.id = ? AND Watchlist.user_id = ?
-        `, [watchlistId, userId]);
+            WHERE (Watchlist.id = ? OR Movies.tmdb_id = ?) AND Watchlist.user_id = ?
+        `, [idParam, idParam, userId]);
         
         if (rows.length > 0) {
             res.render('editWatchlist', { movie: rows[0], user: req.session.username, currentPage: 'watchlist'});
         } else {
-            res.status(404).send("Movie not found in your watchlist");
+            console.log(`Edit failed for ID: ${idParam} and User: ${userId}`);
+            res.status(404).send("Movie not found in your watchlist.");
         }
     } catch (err) {
         console.error(err);
