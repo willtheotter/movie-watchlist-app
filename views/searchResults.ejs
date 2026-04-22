@@ -1,7 +1,11 @@
 <!DOCTYPE html>
 <html>
-<head><title>Search Results</title></head>
+<head>
+    <title>Search Results</title>
+    <link rel="stylesheet" href="/css/style.css">
+</head>
 <body>
+<%- include('partials/nav.ejs') %>
 <h1>Results</h1>
 <a href="/search">New Search</a>
 <hr>
@@ -17,6 +21,12 @@
         <p><strong>Genre:</strong> <%= movie.genre_name %></p>
         <p><strong>TMDb Rating:</strong> <%= movie.rating_score %>/10</p>
 
+        <button type="button" onclick="loadFakeReviews(<%= movie.id %>, this)">
+    Show Reviews
+</button>
+
+<div id="reviews-<%= movie.id %>" style="margin-top: 10px;"></div>
+
         <form action="/watchlist/add" method="POST">
             <input type="hidden" name="tmdb_id" value="<%= movie.id %>">
             <input type="hidden" name="title" value="<%= movie.title %>">
@@ -27,5 +37,57 @@
     </div>
     <hr>
 <% }); %>
+
+<script>
+async function loadFakeReviews(movieId, button) {
+    const reviewBox = document.getElementById(`reviews-${movieId}`);
+    const cacheKey = `reviews-${movieId}`;
+    const saved = localStorage.getItem(cacheKey);
+
+    if (reviewBox.innerHTML !== "") {
+        reviewBox.innerHTML = "";
+        button.textContent = "Show Reviews";
+        return;
+    }
+
+    if (saved) {
+        reviewBox.innerHTML = saved;
+        button.textContent = "Hide Reviews";
+        return;
+    }
+
+    try {
+        const response = await fetch(`/api/fake-reviews/${movieId}`);
+        const data = await response.json();
+        const reviews = data.reviews;
+        const totalLikes = data.totalLikes;
+
+        let html = `
+            <h4>Reviews</h4>
+            <p><strong>👍 Total Likes: ${totalLikes}</strong></p>
+        `;
+
+        reviews.forEach(review => {
+            html += `
+                <div style="border:1px solid #ccc; padding:10px; margin-bottom:10px;">
+                    <strong>${review.reviewer}</strong><br>
+                    ${review.text}
+                </div>
+            `;
+        });
+
+        reviewBox.innerHTML = html;
+
+        localStorage.setItem(cacheKey, html);
+
+        button.textContent = "Hide Reviews";
+
+    } catch (err) {
+        reviewBox.innerHTML = "<p>Error loading reviews</p>";
+    }
+}
+</script>
+
+    <%- include('partials/footer.ejs') %>
 </body>
 </html>

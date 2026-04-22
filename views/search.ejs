@@ -2,11 +2,13 @@
 <html>
 <head><title>Search Movies</title></head>
 <body>
+<link rel="stylesheet" href="/css/style.css">
+<%- include('partials/nav.ejs') %>
 <h1>Find a Movie</h1>
 <form action="/search-results" method="GET">
     <input type="text" name="query" placeholder="Enter movie title..." required>
     <button type="submit">Search</button>
 </form>
-<a href="/">Back Home</a>
+<%- include('partials/footer.ejs') %>
 </body>
 </html>

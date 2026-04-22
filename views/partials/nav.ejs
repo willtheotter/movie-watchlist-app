@@ -1,0 +1,29 @@
+<nav class="navbar">
+    <div class="nav-container">
+
+        <a href="/" class="nav-brand">🎬 WatchList</a>
+
+        <div class="nav-links">
+            <% if (user) { %>
+                <span class="user-greeting">Hello, <%= user %>!</span>
+            <% } %>
+
+            <a href="/" class="nav-link <%= currentPage === 'home' ? 'active' : '' %>">
+                Home
+            </a>
+
+            <a href="/search" class="nav-link <%= currentPage === 'search' ? 'active' : '' %>">
+                🔍 Search
+            </a>
+
+            <a href="/watchlist" class="nav-link <%= currentPage === 'watchlist' ? 'active' : '' %>">
+                📋 My Watchlist
+            </a>
+
+            <a href="/logout" class="nav-link">
+                🚪 Logout
+            </a>
+        </div>
+
+    </div>
+</nav>

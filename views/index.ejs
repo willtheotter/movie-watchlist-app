@@ -1,14 +1,12 @@
 <!DOCTYPE html>
 <html>
-<head><title>WatchList Home</title></head>
+<head>
+    <title>WatchList Home</title>
+    <link rel="stylesheet" href="/css/style.css">
+</head>
 <body>
+ <%- include('partials/nav.ejs') %>
 <h1>My Movie Watchlist</h1>
-<nav>
-    <a href="/search">Search Movies</a> |
-    <a href="/watchlist">Full Watchlist</a> |
-    <a href="/logout" style="color: red;">Logout</a>
-</nav>
-
 <h2>Quick View</h2>
 <ul>
     <% if (watchlist.length === 0) { %>
@@ -22,5 +20,7 @@
         <% }); %>
     <% } %>
 </ul>
+
+<%- include('partials/footer.ejs') %>
 </body>
 </html>

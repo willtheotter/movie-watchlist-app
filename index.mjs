@@ -21,6 +21,11 @@ app.use(session({
     cookie: { secure: false, maxAge: 1000 * 60 * 60 * 24 }
 }));
 
+app.use((req, res, next) => {
+    res.locals.user = req.session.username;
+    next();
+});
+
 const pool = mysql.createPool({
     host: process.env.DB_HOST,
     user: process.env.DB_USER,
@@ -53,14 +58,46 @@ app.get('/', isAuthenticated, async (req, res) => {
             WHERE Watchlist.user_id = ?
             LIMIT 5
         `, [req.session.userId]);
-        res.render('index', { watchlist: rows, user: req.session.username });
+        res.render('index', { watchlist: rows, user: req.session.username, currentPage: 'home'});
     } catch (err) {
         res.status(500).send("Database Error");
     }
 });
 
 app.get('/search', isAuthenticated, (req, res) => {
-    res.render('search');
+    res.render('search', { currentPage: 'search' });
+});
+
+app.get('/api/fake-reviews/:movieId', isAuthenticated, async (req, res) => {
+    const movieId = parseInt(req.params.movieId);
+
+    try {
+        const response = await fetch('https://dummyjson.com/comments?limit=20');
+        const data = await response.json();
+
+        const numReviews = Math.floor(Math.random() * 5) + 1;
+
+        const shuffled = data.comments.sort(() => 0.5 - Math.random());
+
+        const selected = shuffled.slice(0, numReviews);
+
+        const fakeReviews = selected.map(comment => ({
+            reviewer: comment.user.fullName,
+            text: comment.body,
+            likes: comment.likes
+        }));
+
+        const totalLikes = fakeReviews.reduce((sum, r) => sum + r.likes, 0);
+
+        res.json({
+            reviews: fakeReviews,
+            totalLikes: totalLikes
+        });
+
+    } catch (err) {
+        console.error(err);
+        res.status(500).json({ error: 'Could not load reviews' });
+    }
 });
 
 app.get('/search-results', isAuthenticated, async (req, res) => {
@@ -72,6 +109,12 @@ app.get('/search-results', isAuthenticated, async (req, res) => {
         const response = await fetch(url);
         const data = await response.json();
 
+        console.log("TMDB response:", data);
+
+        if (!data.results || !Array.isArray(data.results)) {
+            return res.status(500).send("TMDB API returned an invalid response");
+        }
+
         const processedMovies = data.results.map(movie => {
             const firstGenreId = movie.genre_ids && movie.genre_ids.length > 0 ? movie.genre_ids[0] : null;
             return {
@@ -81,7 +124,7 @@ app.get('/search-results', isAuthenticated, async (req, res) => {
             };
         });
 
-        res.render('searchResults', { movies: processedMovies });
+        res.render('searchResults', { movies: processedMovies, currentPage: 'search'});
     } catch (err) {
         console.error(err);
         res.status(500).send("API Error");
@@ -147,7 +190,7 @@ app.get('/watchlist', isAuthenticated, async (req, res) => {
             ORDER BY Watchlist.watched_status ASC, Watchlist.id DESC
         `, [userId]);
         
-        res.render('watchlist', { movies: rows, success, error, user: req.session.username });
+        res.render('watchlist', { movies: rows, success, error, user: req.session.username, currentPage: 'watchlist'});
     } catch (err) {
         console.error(err);
         res.status(500).send("Error fetching watchlist");
@@ -167,7 +210,7 @@ app.get('/edit/:id', isAuthenticated, async (req, res) => {
         `, [watchlistId, userId]);
         
         if (rows.length > 0) {
-            res.render('editWatchlist', { movie: rows[0], user: req.session.username });
+            res.render('editWatchlist', { movie: rows[0], user: req.session.username, currentPage: 'watchlist'});
         } else {
             res.status(404).send("Movie not found in your watchlist");
         }
@@ -334,7 +377,7 @@ app.post('/register', async (req, res) => {
 });
 
 app.get('/sync-guest-data', isAuthenticated, (req, res) => {
-    res.render('syncData', { user: req.session.username });
+    res.render('syncData', { user: req.session.username, currentPage: 'sync' });
 });
 
 app.post('/api/sync-watchlist', isAuthenticated, async (req, res) => {

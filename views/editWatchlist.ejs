@@ -19,7 +19,8 @@
     <label>Rating (1-10):</label>
     <input type="number" name="rating" min="1" max="10" value="<%= movie.rating %>">
 
-    <br><br>
+    <br>
+    <br>
 
     <label>Watched?</label>
     <input
@@ -28,7 +29,8 @@
             <%= movie.watched_status ? "checked" : "" %>
     >
 
-    <br><br>
+    <br>
+    <br>
 
     <label style="display: block; margin-bottom: 8px;">Your Review:</label>
     <textarea
@@ -38,7 +40,8 @@
             placeholder="What was your experience?"
     ><%= movie.personal_review %></textarea>
 
-    <br><br>
+    <br>
+    <br>
 
     <button type="submit">Save Changes</button>
 </form>
