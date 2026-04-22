@@ -23,11 +23,22 @@
     <br>
 
     <label>Watched?</label>
-    <input 
-        type="checkbox" 
-        name="watched_status"
-        <%= movie.watched_status ? "checked" : "" %>
+    <input
+            type="checkbox"
+            name="watched_status"
+            <%= movie.watched_status ? "checked" : "" %>
     >
+
+    <br>
+    <br>
+
+    <label style="display: block; margin-bottom: 8px;">Your Review:</label>
+    <textarea
+            name="personal_review"
+            rows="6"
+            cols="50"
+            placeholder="What was your experience?"
+    ><%= movie.personal_review %></textarea>
 
     <br>
     <br>
