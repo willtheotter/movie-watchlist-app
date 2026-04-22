@@ -1,22 +1,48 @@
 <!DOCTYPE html>
 <html>
-<head><title>Edit Movie</title></head>
+<head>
+    <title>Edit Movie</title>
+    <link rel="stylesheet" href="/css/style.css">
+</head>
 <body>
+<%- include('partials/nav.ejs') %>
 <h1>Update Details</h1>
+<h2><%= movie.title %></h2>
+<% if (movie.poster_url) { %>
+    <img src="<%= movie.poster_url %>" width="150">
+<% } %>
+<br>
+<br>
 <form action="/watchlist/update" method="POST">
     <input type="hidden" name="id" value="<%= movie.id %>">
 
     <label>Rating (1-10):</label>
     <input type="number" name="rating" min="1" max="10" value="<%= movie.rating %>">
 
-    <br>
+    <br><br>
 
     <label>Watched?</label>
-    <input type="checkbox" name="watched_status">
+    <input
+            type="checkbox"
+            name="watched_status"
+            <%= movie.watched_status ? "checked" : "" %>
+    >
 
-    <br>
+    <br><br>
+
+    <label style="display: block; margin-bottom: 8px;">Your Review:</label>
+    <textarea
+            name="personal_review"
+            rows="6"
+            cols="50"
+            placeholder="What was your experience?"
+    ><%= movie.personal_review %></textarea>
+
+    <br><br>
 
     <button type="submit">Save Changes</button>
 </form>
+
+<%- include('partials/footer.ejs') %>
 </body>
 </html>
